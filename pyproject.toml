@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ispynanoaod"
+version = "0.1.0"
+description = "A simple python event display for CMS nanoaod"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [
+  { name="Thomas McCauley", email="thomas.mccauley@cern.ch" }
+]
+keywords = ["visualization", "nanoaod", "CMS"]
+
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/cms-outreach/ispy-nanoaod"
