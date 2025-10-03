@@ -1,3 +1,5 @@
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cms-outreach/ispy-nanoaod/HEAD)
+
 # iSpy NanoAOD: An event display for the CMS NanoAOD format
 
 ## Usage
