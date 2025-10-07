@@ -1,5 +1,4 @@
-numpy==1.24.1
-uproot==5.02
-matplotlib==3.7.2
 pythreejs
+uproot
+awkward
 jupyter

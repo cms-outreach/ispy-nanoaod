@@ -14,7 +14,12 @@ authors = [
 ]
 keywords = ["visualization", "nanoaod", "CMS"]
 
-dependencies = []
+dependencies = [
+  "pythreejs",
+  "uproot",
+  "awkward",
+  "jupyter"
+]
 
 [project.urls]
 Homepage = "https://github.com/cms-outreach/ispy-nanoaod"
