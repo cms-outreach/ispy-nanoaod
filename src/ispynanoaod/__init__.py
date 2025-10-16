@@ -8,7 +8,7 @@ from .display.renderer import EventRenderer
 from .objects.objects import ObjectFactory
 from .objects.detector import DetectorGeometry
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "Thomas McCauley"
 
 __all__ = [
