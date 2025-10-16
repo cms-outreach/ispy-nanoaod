@@ -1,4 +1,1 @@
-pythreejs
-uproot
-awkward
-jupyter
+ispynanoaod
