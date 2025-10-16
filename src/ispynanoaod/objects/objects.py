@@ -6,6 +6,7 @@ import math
 import numpy as np
 from pythreejs import *
 from typing import List, Union
+import random
 
 class ObjectFactory:
     """
@@ -126,61 +127,81 @@ class ObjectFactory:
         """Create 3D muon objects."""
         muons = []
         style = self.styles['muon']
-        
+
         for pt, eta, phi, charge in zip(pt_array, eta_array, phi_array, charge_array):
             muon = self._create_lepton(
                 float(pt), float(eta), float(phi), int(charge), 'Muon', style
             )
             muons.append(muon)
-            
+    
         return muons
         
     def create_electrons(self, pt_array, eta_array, phi_array, charge_array) -> List:
         """Create 3D electron objects."""
         electrons = []
         style = self.styles['electron']
-        
+
         for pt, eta, phi, charge in zip(pt_array, eta_array, phi_array, charge_array):
             electron = self._create_lepton(
                 float(pt), float(eta), float(phi), int(charge), 'Electron', style
             )
             electrons.append(electron)
-            
+
         return electrons
         
     def _create_lepton(self, pt, eta, phi, charge, name, style):
-        """Create a lepton (muon or electron) arrow."""
+        """Create a lepton (muon or electron) track"""
 
-        '''
-        NOTE: need to figure out how to
-        1) handle curvature in magnetic field
-        2) what to do about lack of information about endpoints in nanoaod
-        '''
+        # Assume for now that the track starts from (0,0,0)
+        vertex = (0,0,0)
+
+        # Check the direction of the B-field
+        Bz = 3.8
+        radius = pt / (np.fabs(charge)*Bz)
         
-        # Direction vector
-        dir_vec = np.array([
-            math.cos(phi),
-            math.sin(phi),
-            math.sinh(eta)
-        ])
-        dir_vec /= np.linalg.norm(dir_vec)
+        centerX = vertex[0] + radius*charge*np.sin(phi)
+        centerY = vertex[1] - radius*charge*np.cos(phi)
+        pz = pt*np.sinh(eta)
+        phi0 = np.arctan2(vertex[1] - centerY, vertex[0] - centerX)
+        omega = (charge*Bz) / pt
+        pitch = pz / (pt*np.fabs(omega))
+
+        maxAngle = 4*np.pi
+        numPoints = 1000
+        points = []
+
+        for i in range(0, numPoints+1):
+
+            t = (i/numPoints)*maxAngle
+            x = centerX + radius*np.cos(phi0+t)
+            y = centerY + radius*np.sin(phi0+t)
+            z = vertex[2] + t*pitch
+            r = np.sqrt(x*x +y*y)
+
+            # We don't have an endpoint for the tracks.
+            # For now propagate to the extent of the "EB".
+            # Also, we need to get these numbers from somewhere,
+            # not hard-coded.
+            if np.fabs(z) > 3 or r > 1.21:
+                break
+            
+            points.append((x,y,z))
+            
+        points = np.array(points)
         
-        # Create arrow
-        arrow = ArrowHelper(
-            dir=dir_vec.tolist(),
-            origin=[0, 0, 0],
-            length=pt * style['scale'],
-            color=style['color'],
-            headLength=style['head_length'],
-            headWidth=style['head_width']
+        geometry = BufferGeometry(
+            attributes={
+                'position': BufferAttribute(points, normalized=False)
+            }
         )
         
-        # Add metadata
-        arrow.name = name
-        arrow.props = {'pt': pt, 'eta': eta, 'phi': phi, 'charge': charge}
-        
-        return arrow
-        
+        material = LineBasicMaterial(color=style['color'])
+        track = Line(geometry=geometry, material=material)
+
+        track.name = name
+        track.props = {'pt': pt, 'eta': eta, 'phi': phi, 'charge': charge}
+        return track
+                
     def create_met(self, pt, phi):
         """Create missing energy object."""
         style = self.styles['met']
@@ -241,7 +262,7 @@ class ObjectFactory:
         )
         
         vertex.name = 'PV'
-        vertex.position = [0.01 * float(x), 0.01 * float(y), 0.01 * float(z)]
+        vertex.position = [0.01*float(x), 0.01*float(y), 0.01*float(z)]
         
         return vertex
         
@@ -263,7 +284,7 @@ class ObjectFactory:
             )
             
             vertex.name = 'SV'
-            vertex.position = [0.01 * float(x), 0.01 * float(y), 0.01 * float(z)]
+            vertex.position = [0.01*float(x), 0.01*float(y), 0.01*float(z)]
             vertices.append(vertex)
             
         return vertices

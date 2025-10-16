@@ -149,6 +149,11 @@ class EventRenderer:
         
     def _highlight_object(self, obj):
         """Highlight a hovered object."""
+
+        # Don't highlight EB
+        if obj.name == 'EB':
+            return
+
         if hasattr(obj, 'material') and hasattr(obj.material, 'color'):
             obj.material.color = '#ffffff'
             
@@ -157,7 +162,8 @@ class EventRenderer:
         if not hasattr(obj, 'name') or not hasattr(obj, 'material'):
             return
             
-        # Reset colors based on object type
+        # Reset colors based on object type.
+        # This should be somewhere central.
         color_map = {
             'Jet': '#ffff00',
             'MET': '#ff00ff',

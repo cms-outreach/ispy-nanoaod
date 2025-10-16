@@ -6,7 +6,6 @@ import math
 from pythreejs import *
 from typing import List
 
-
 class DetectorGeometry:
     """
     Creates 3D representations of detector components.
@@ -156,7 +155,7 @@ class DetectorGeometry:
         
         return [muon_system]
         
-    def create_coordinate_axes(self, length: float = 2.0) -> List:
+    def create_coordinate_axes(self, length: float = 1.0) -> List:
         """
         Create coordinate system axes.
         
