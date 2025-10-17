@@ -19,7 +19,9 @@ class DataLoader:
         'nMuon', 'Muon_pt', 'Muon_eta', 'Muon_phi', 'Muon_charge',
         'nElectron', 'Electron_pt', 'Electron_eta', 'Electron_phi', 'Electron_charge',
         'nSV', 'SV_x', 'SV_y', 'SV_z',
-        'PV_x', 'PV_y', 'PV_z'
+        'PV_x', 'PV_y', 'PV_z',
+        'nFatJet', 'FatJet_pt', 'FatJet_eta', 'FatJet_phi',
+        'nIsoTrack', 'IsoTrack_pt', 'IsoTrack_eta', 'IsoTrack_phi', 'IsoTrack_charge',
     ]
     
     def __init__(self):

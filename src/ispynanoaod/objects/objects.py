@@ -22,17 +22,21 @@ class ObjectFactory:
                 'radius_bottom': 0.0,
                 'length': 1.1
             },
+            'fatjet': {
+                'color': '#ff6600',
+                'opacity': 0.5,
+                'radius_top': 0.6,
+                'radius_bottom': 0.0,
+                'length': 1.1
+            },
             'muon': {
-                'color': '#ff0000',
-                'scale': 0.1,
-                'head_length': 0.2,
-                'head_width': 0.1
+                'color': '#ff0000'
             },
             'electron': {
-                'color': '#19ff19',
-                'scale': 0.1,
-                'head_length': 0.2,
-                'head_width': 0.1
+                'color': '#19ff19'
+            },
+            'track': {
+                'color': '#ffff00'
             },
             'met': {
                 'color': '#ff00ff',
@@ -73,12 +77,39 @@ class ObjectFactory:
         style = self.styles['jet']
         
         for pt, eta, phi in zip(pt_array, eta_array, phi_array):
-            jet = self._create_jet(float(pt), float(eta), float(phi), style)
+            jet = self._create_jet(float(pt), float(eta), float(phi), 'Jet', style)
             jets.append(jet)
             
         return jets
         
-    def _create_jet(self, pt, eta, phi, style):
+    def create_fjets(self, pt_array, eta_array, phi_array) -> List:
+        """
+        Create 3D jet objects.
+        
+        Parameters:
+        -----------
+        pt_array : array-like
+            Transverse momentum values
+        eta_array : array-like
+            Pseudorapidity values
+        phi_array : array-like
+            Azimuthal angle values
+            
+        Returns:
+        --------
+        list
+            List of jet 3D objects
+        """
+        fjets = []
+        style = self.styles['fatjet']
+        
+        for pt, eta, phi in zip(pt_array, eta_array, phi_array):
+            fjet = self._create_jet(float(pt), float(eta), float(phi), 'FatJet', style)
+            fjets.append(fjet)
+            
+        return fjets
+        
+    def _create_jet(self, pt, eta, phi, name, style):
         """Create a single jet object."""
         theta = 2 * math.atan(pow(math.e, -eta))
         
@@ -118,7 +149,7 @@ class ObjectFactory:
         jet.position = (dir_vec * length).tolist()
         
         # Add metadata
-        jet.name = 'Jet'
+        jet.name = name
         jet.props = {'pt': pt, 'eta': eta, 'phi': phi}
         
         return jet
@@ -149,9 +180,21 @@ class ObjectFactory:
 
         return electrons
         
+    def create_tracks(self, pt_array, eta_array, phi_array, charge_array) -> List:
+        """Create 3D isotrack objects."""
+        tracks = []
+        style = self.styles['track']
+
+        for pt, eta, phi, charge in zip(pt_array, eta_array, phi_array, charge_array):
+            track = self._create_lepton(
+                float(pt), float(eta), float(phi), int(charge), 'IsoTrack', style
+            )
+            tracks.append(track)
+
+        return tracks
+        
     def _create_lepton(self, pt, eta, phi, charge, name, style):
         """Create a lepton (muon or electron) track"""
-
         # Assume for now that the track starts from (0,0,0)
         vertex = (0,0,0)
 

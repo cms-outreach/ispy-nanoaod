@@ -138,7 +138,14 @@ class EventDisplay:
                 event['Jet_pt'], event['Jet_eta'], event['Jet_phi']
             )
             objects.extend(jets)
-            
+
+        # FatJets (ak8)
+        if event['nFatJet'] > 0:
+            fjets = self.object_factory.create_fjets(
+                event['FatJet_pt'], event['FatJet_eta'], event['FatJet_phi']
+            )
+            objects.extend(jets)
+        
         # Muons
         if event['nMuon'] > 0:
             muons = self.object_factory.create_muons(
@@ -154,6 +161,16 @@ class EventDisplay:
                 event['Electron_phi'], event['Electron_charge']
             )
             objects.extend(electrons)
+
+        # IsoTracks
+        if event['nIsoTrack'] > 0:            
+            print(f"nIsoTrack: {event['nIsoTrack']}")
+
+            tracks = self.object_factory.create_tracks(
+                event['IsoTrack_pt'], event['IsoTrack_eta'],
+                event['IsoTrack_phi'], event['IsoTrack_charge']
+            )
+            objects.extend(tracks)
             
         # MET
         met = self.object_factory.create_met(
@@ -172,7 +189,7 @@ class EventDisplay:
             event['PV_x'], event['PV_y'], event['PV_z']
         )
         objects.append(pv)
-        
+    
         # Add all objects to scene
         self.renderer.add_objects(objects)
 

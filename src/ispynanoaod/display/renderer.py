@@ -170,7 +170,9 @@ class EventRenderer:
             'Muon': '#ff0000',
             'Electron': '#19ff19',
             'PV': '#ffff00',
-            'SV': '#ff6600'
+            'SV': '#ff6600',
+            'FatJet': '#ff6600',
+            'IsoTrack': '#ffff00'
         }
         
         if obj.name in color_map and hasattr(obj.material, 'color'):
