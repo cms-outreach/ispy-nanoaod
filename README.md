@@ -1,4 +1,4 @@
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cms-outreach/ispy-nanoaod/HEAD) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cms-outreach/ispy-nanoaod/blob/master/examples/load_event_and_display.ipynb) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17369554.svg)](https://doi.org/10.5281/zenodo.17369554)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cms-outreach/ispy-nanoaod/HEAD) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17369554.svg)](https://doi.org/10.5281/zenodo.17369554)
 
 # iSpy NanoAOD: An event display for the CMS NanoAOD format
 
