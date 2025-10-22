@@ -124,7 +124,7 @@ class EventDisplay:
             include_tracker=False,
             include_hcal=False,
             include_muon=False,
-            include_axes=True
+            include_axes=False
         )
         
         self.renderer.add_objects(detector_objects)

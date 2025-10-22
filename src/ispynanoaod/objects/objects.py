@@ -30,13 +30,16 @@ class ObjectFactory:
                 'length': 1.1
             },
             'muon': {
-                'color': '#ff0000'
+                'color': '#ff0000',
+                'linewidth': 2
             },
             'electron': {
-                'color': '#19ff19'
+                'color': '#00ff00',
+                'linewidth': 2
             },
             'track': {
-                'color': '#ffff00'
+                'color': '#ffff00',
+                'linewidth': 2
             },
             'met': {
                 'color': '#ff00ff',
@@ -196,18 +199,19 @@ class ObjectFactory:
     def _create_lepton(self, pt, eta, phi, charge, name, style):
         """Create a lepton (muon or electron) track"""
         # Assume for now that the track starts from (0,0,0)
+        # How to associate to the PV or SV? We have dxy, dz, ip3d...?
         vertex = (0,0,0)
 
         # Check the direction of the B-field
         Bz = 3.8
-        radius = pt / (np.fabs(charge)*Bz)
+        radius = pt / (np.abs(charge)*Bz)
         
-        centerX = vertex[0] + radius*charge*np.sin(phi)
-        centerY = vertex[1] - radius*charge*np.cos(phi)
+        centerX = vertex[0] + radius*np.sign(charge)*np.sin(phi)
+        centerY = vertex[1] - radius*np.sign(charge)*np.cos(phi)
         pz = pt*np.sinh(eta)
         phi0 = np.arctan2(vertex[1] - centerY, vertex[0] - centerX)
         omega = (charge*Bz) / pt
-        pitch = pz / (pt*np.fabs(omega))
+        pitch = pz / (pt*np.sign(omega))
 
         maxAngle = 4*np.pi
         numPoints = 1000
@@ -216,8 +220,8 @@ class ObjectFactory:
         for i in range(0, numPoints+1):
 
             t = (i/numPoints)*maxAngle
-            x = centerX + radius*np.cos(phi0+t)
-            y = centerY + radius*np.sin(phi0+t)
+            x = centerX + radius*np.cos(phi0 + np.sign(omega)*t)
+            y = centerY + radius*np.sin(phi0 + np.sign(omega)*t)
             z = vertex[2] + t*pitch
             r = np.sqrt(x*x +y*y)
 
@@ -231,16 +235,19 @@ class ObjectFactory:
             points.append((x,y,z))
             
         points = np.array(points)
-        
-        geometry = BufferGeometry(
-            attributes={
-                'position': BufferAttribute(points, normalized=False)
-            }
-        )
-        
-        material = LineBasicMaterial(color=style['color'])
-        track = Line(geometry=geometry, material=material)
 
+        geometry = LineGeometry(positions=points)
+        
+        material = LineMaterial(
+            linewidth=style['linewidth'],
+            color=style['color']
+        )
+
+        # Is this needed? It seems no?
+        #material.resolution = [width, height]
+
+        track = Line2(geometry=geometry, material=material)
+        
         track.name = name
         track.props = {'pt': pt, 'eta': eta, 'phi': phi, 'charge': charge}
         return track
