@@ -55,6 +55,11 @@ class ObjectFactory:
             'secondary_vertex': {
                 'color': '#ff6600',
                 'radius': 0.01
+            },
+            'photon': {
+                'color': '#ffff00',
+                'dashSize': 0.1,
+                'gapSize': 0.1
             }
         }
         
@@ -84,7 +89,7 @@ class ObjectFactory:
             jets.append(jet)
             
         return jets
-        
+
     def create_fjets(self, pt_array, eta_array, phi_array) -> List:
         """
         Create 3D jet objects.
@@ -338,6 +343,91 @@ class ObjectFactory:
             vertices.append(vertex)
             
         return vertices
+
+    def create_photons(self, pt_array, eta_array, phi_array) -> List:
+        """
+        Create 3D photon objects.
+        
+        Parameters:
+        -----------
+        pt_array : array-like
+            Transverse momentum values
+        eta_array : array-like
+            Pseudorapidity values
+        phi_array : array-like
+            Azimuthal angle values
+            
+        Returns:
+        --------
+        list
+            List of photon 3D objects
+        """
+        photons = []
+        style = self.styles['photon']
+
+        for pt, eta, phi in zip(pt_array, eta_array, phi_array):
+            photon = self._create_photon(float(pt), float(eta), float(phi), style)
+            photons.append(photon)
+
+        return photons
+
+    def _create_photon(self, pt, eta, phi, style):
+        """ Create photon object """
+    
+        # We need to get these from somewhere else
+        lEB = 3.0 # Half-length of EB 
+        rEB = 1.24 # EB inner radius
+
+        x0 = 0.0
+        y0 = 0.0
+        z0 = 0.0
+        
+        px = np.cos(phi)                                                                                                                              
+        py = np.sin(phi)                                                                                                                              
+        pz = (np.pow(np.e, eta) - np.pow(np.e, -eta))/2;
+
+        eta_max = 1.48 # if greater then propagate to EE
+        if np.abs(eta) > 1.48:
+            t = np.abs((lEB-z0)/pz)
+        else:
+            a = px*px + py*py
+            b = 2*x0*px + 2*y0*py
+            c = x0*x0 + y0*y0 - rEB*rEB
+            t = (-b+np.sqrt(b*b-4*a*c))/2
+            
+        points = np.array([
+            [x0, y0, z0],
+            [x0+px*t, y0+py*t, z0+pz*t]
+        ], dtype='float32')
+        
+        # line.computeLineDistances() is not supported so we need to
+        # do it manually
+        distances = np.zeros(len(points), dtype='float32')
+        for i in range(1, len(points)):
+            distances[i] = distances[i-1] + np.linalg.norm(points[i] - points[i-1])
+
+        geometry = BufferGeometry(
+            attributes={
+                'position': BufferAttribute(points),
+                'lineDistance': BufferAttribute(distances)
+            }
+        )
+
+        material = LineDashedMaterial(
+            color=style['color'],
+            dashSize=style['dashSize'],
+            gapSize=style['gapSize']
+        )
+
+        photon = Line(
+            geometry=geometry,
+            material=material
+        )
+
+        photon.name = 'Photon'
+        photon.props = {'pt': pt, 'eta': eta, 'phi': phi}
+        
+        return photon
         
     def set_style(self, particle_type: str, **kwargs):
         """

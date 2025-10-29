@@ -164,6 +164,8 @@ class EventRenderer:
             
         # Reset colors based on object type.
         # This should be somewhere central.
+        # And if we change the colors in the API
+        # these no longer apply.
         color_map = {
             'Jet': '#ffff00',
             'MET': '#ff00ff',
@@ -172,7 +174,8 @@ class EventRenderer:
             'PV': '#ffff00',
             'SV': '#ff6600',
             'FatJet': '#ff6600',
-            'IsoTrack': '#ffff00'
+            'IsoTrack': '#ffff00',
+            'Photon': '#ffff00'
         }
         
         if obj.name in color_map and hasattr(obj.material, 'color'):

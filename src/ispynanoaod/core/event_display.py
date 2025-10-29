@@ -164,8 +164,6 @@ class EventDisplay:
 
         # IsoTracks
         if event['nIsoTrack'] > 0:            
-            print(f"nIsoTrack: {event['nIsoTrack']}")
-
             tracks = self.object_factory.create_tracks(
                 event['IsoTrack_pt'], event['IsoTrack_eta'],
                 event['IsoTrack_phi'], event['IsoTrack_charge']
@@ -189,7 +187,15 @@ class EventDisplay:
             event['PV_x'], event['PV_y'], event['PV_z']
         )
         objects.append(pv)
-    
+        
+        # Photons            
+        if event['nPhoton'] > 0:    
+            photons = self.object_factory.create_photons(
+                event['Photon_pt'], event['Photon_eta'],
+                event['Photon_phi']
+            )
+            objects.extend(photons)
+        
         # Add all objects to scene
         self.renderer.add_objects(objects)
 
