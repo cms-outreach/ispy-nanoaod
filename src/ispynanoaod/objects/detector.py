@@ -6,6 +6,8 @@ import math
 from pythreejs import *
 from typing import List
 
+from .rotation_utils import direction_to_quaternion
+
 class DetectorGeometry:
     """
     Creates 3D representations of detector components.
@@ -52,7 +54,10 @@ class DetectorGeometry:
         )
         
         eb = Mesh(geometry=geometry, material=material)
-        eb.rotateX(math.pi / 2)
+        # Colab's widget manager doesn't reliably deliver relative rotate*()
+        # comm messages across repeated updates; use absolute quaternion
+        # assignment instead. EB is built once and reused across events.
+        eb.quaternion = direction_to_quaternion((0, 1, 0), (0, 0, 1))
         eb.name = 'EB'
         
         return [eb]
@@ -83,7 +88,10 @@ class DetectorGeometry:
         )
         
         hcal = Mesh(geometry=geometry, material=material)
-        hcal.rotateX(math.pi / 2)
+        # Colab's widget manager doesn't reliably deliver relative rotate*()
+        # comm messages across repeated updates; use absolute quaternion
+        # assignment instead. HCAL barrel is built once and reused across events.
+        hcal.quaternion = direction_to_quaternion((0, 1, 0), (0, 0, 1))
         hcal.name = 'HCAL_Barrel'
         
         return [hcal]
@@ -118,7 +126,10 @@ class DetectorGeometry:
             )
             
             layer = Mesh(geometry=geometry, material=material)
-            layer.rotateX(math.pi / 2)
+            # Colab's widget manager doesn't reliably deliver relative rotate*()
+            # comm messages across repeated updates; use absolute quaternion
+            # assignment instead. Tracker layers are built once and reused across events.
+            layer.quaternion = direction_to_quaternion((0, 1, 0), (0, 0, 1))
             layer.name = f'Pixel_Layer_{radius}'
             tracker_objects.append(layer)
             
@@ -150,7 +161,10 @@ class DetectorGeometry:
         )
         
         muon_system = Mesh(geometry=geometry, material=material)
-        muon_system.rotateX(math.pi / 2)
+        # Colab's widget manager doesn't reliably deliver relative rotate*()
+        # comm messages across repeated updates; use absolute quaternion
+        # assignment instead. Muon system is built once and reused across events.
+        muon_system.quaternion = direction_to_quaternion((0, 1, 0), (0, 0, 1))
         muon_system.name = 'Muon_System'
         
         return [muon_system]

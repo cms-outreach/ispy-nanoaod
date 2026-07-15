@@ -65,6 +65,13 @@ class EventRenderer:
     def _setup_scene(self):
         """Setup the 3D scene."""
         self.scene = Scene(background=self.background)
+
+        # Detector geometry is built once and persists across events;
+        # event objects (jets, muons, MET, ...) are rebuilt every event.
+        self.detector_group = Object3D()
+        self.event_group = Object3D()
+        self.scene.add(self.detector_group)
+        self.scene.add(self.event_group)
         
     def _setup_renderer(self):
         """Setup the threejs renderer with controls."""
@@ -78,26 +85,42 @@ class EventRenderer:
         
     def add_objects(self, objects: Union[List, object]):
         """
-        Add 3D objects to the scene.
-        
+        Add per-event 3D objects to the scene (cleared on every event change).
+
         Parameters:
         -----------
         objects : list or single object
             3D objects to add to the scene
         """
+        self._add_to_group(self.event_group, objects)
+
+    def add_detector_objects(self, objects: Union[List, object]):
+        """
+        Add detector geometry to the scene. This geometry is static and is
+        meant to be added once; it is not affected by clear_event_objects().
+
+        Parameters:
+        -----------
+        objects : list or single object
+            3D objects to add to the scene
+        """
+        self._add_to_group(self.detector_group, objects)
+
+    def _add_to_group(self, group, objects: Union[List, object]):
+        """Add (possibly nested) objects to a group."""
         if not isinstance(objects, list):
             objects = [objects]
-            
+
         for obj in objects:
             if isinstance(obj, list):
                 # Handle nested lists
-                self.add_objects(obj)
+                self._add_to_group(group, obj)
             else:
-                self.scene.add(obj)
-                
-    def clear_scene(self):
-        """Remove all objects from the scene."""
-        self.scene.children = []
+                group.add(obj)
+
+    def clear_event_objects(self):
+        """Remove all per-event objects from the scene, keeping detector geometry."""
+        self.event_group.children = []
         
     def setup_picking(self, hover_callback: Optional[Callable] = None):
         """

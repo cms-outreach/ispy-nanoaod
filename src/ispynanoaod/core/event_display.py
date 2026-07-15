@@ -43,7 +43,14 @@ class EventDisplay:
         self.events_data = None
         self.current_event_index = 0
         self.max_events = 0
-        
+
+        # Detector geometry is static, so it's built once and reused across
+        # every event instead of being recreated on each render. The build
+        # is deferred to the first render (see _ensure_detector_geometry())
+        # rather than done here, so that callers configuring it in between
+        # (e.g. display.detector_geometry.configure_eb(...)) still take effect.
+        self._detector_built = False
+
         # UI components
         self._setup_ui()
         
@@ -107,28 +114,31 @@ class EventDisplay:
         event = self.events_data[self.current_event_index]
         self._render_event(event)
         
-    def _render_event(self, event):
-        """Render a single event to the 3D scene."""
-        # Clear previous event
-        self.renderer.clear_scene()
-        
-        # Update event info
-        self._update_event_info(event)
-        
-        # Add detector geometry
+    def _ensure_detector_geometry(self):
+        """Build the (static) detector geometry once, on first use."""
+        if self._detector_built:
+            return
 
         # NOTE: These geometries are just placeholders and not realistic
-        
-        #detector_objects = self.detector_geometry.create_eb()
         detector_objects = self.detector_geometry.create_full_detector(
             include_tracker=False,
             include_hcal=False,
             include_muon=False,
             include_axes=False
         )
-        
-        self.renderer.add_objects(detector_objects)
-        
+        self.renderer.add_detector_objects(detector_objects)
+        self._detector_built = True
+
+    def _render_event(self, event):
+        """Render a single event to the 3D scene."""
+        self._ensure_detector_geometry()
+
+        # Clear previous event's objects (detector geometry is static and persists)
+        self.renderer.clear_event_objects()
+
+        # Update event info
+        self._update_event_info(event)
+
         # Add 3D objects
         objects = []
         
