@@ -37,20 +37,36 @@ class EventRenderer:
         self.picker = None
         self.last_hovered_object = None
         
+    def _make_directional_light(self, position):
+        """
+        Create a DirectionalLight with explicit, Python-backed `target` and
+        `shadow` widgets.
+
+        Both traits default to pythreejs' Uninitialized sentinel, which
+        leaves three.js to create its own implicit objects (a target
+        Object3D, and a shadow's own default OrthographicCamera) with no
+        Python-side widget backing them. Colab's custom widget manager
+        round-trips those implicit objects' model ids back to Python, which
+        then fails to resolve them to widgets and raises a TraitError.
+        Explicitly constructing them (with values matching three.js'
+        defaults) avoids that, without changing the light's behavior.
+        """
+        return DirectionalLight(
+            color='white',
+            position=position,
+            intensity=1,
+            target=Object3D(position=[0, 0, 0]),
+            shadow=DirectionalLightShadow(
+                camera=OrthographicCamera(-5, 5, 5, -5, 0.5, 500)
+            )
+        )
+
     def _setup_lights(self):
         """Setup scene lighting."""
         light_pos = 15.0
         self.lights = [
-            DirectionalLight(
-                color='white',
-                position=[-light_pos, light_pos, light_pos],
-                intensity=1
-            ),
-            DirectionalLight(
-                color='white',
-                position=[light_pos, -light_pos, -light_pos],
-                intensity=1
-            )
+            self._make_directional_light([-light_pos, light_pos, light_pos]),
+            self._make_directional_light([light_pos, -light_pos, -light_pos]),
         ]
         
     def _setup_camera(self):
@@ -65,6 +81,13 @@ class EventRenderer:
     def _setup_scene(self):
         """Setup the 3D scene."""
         self.scene = Scene(background=self.background)
+
+        # Detector geometry is built once and persists across events;
+        # event objects (jets, muons, MET, ...) are rebuilt every event.
+        self.detector_group = Object3D()
+        self.event_group = Object3D()
+        self.scene.add(self.detector_group)
+        self.scene.add(self.event_group)
         
     def _setup_renderer(self):
         """Setup the threejs renderer with controls."""
@@ -78,26 +101,42 @@ class EventRenderer:
         
     def add_objects(self, objects: Union[List, object]):
         """
-        Add 3D objects to the scene.
-        
+        Add per-event 3D objects to the scene (cleared on every event change).
+
         Parameters:
         -----------
         objects : list or single object
             3D objects to add to the scene
         """
+        self._add_to_group(self.event_group, objects)
+
+    def add_detector_objects(self, objects: Union[List, object]):
+        """
+        Add detector geometry to the scene. This geometry is static and is
+        meant to be added once; it is not affected by clear_event_objects().
+
+        Parameters:
+        -----------
+        objects : list or single object
+            3D objects to add to the scene
+        """
+        self._add_to_group(self.detector_group, objects)
+
+    def _add_to_group(self, group, objects: Union[List, object]):
+        """Add (possibly nested) objects to a group."""
         if not isinstance(objects, list):
             objects = [objects]
-            
+
         for obj in objects:
             if isinstance(obj, list):
                 # Handle nested lists
-                self.add_objects(obj)
+                self._add_to_group(group, obj)
             else:
-                self.scene.add(obj)
-                
-    def clear_scene(self):
-        """Remove all objects from the scene."""
-        self.scene.children = []
+                group.add(obj)
+
+    def clear_event_objects(self):
+        """Remove all per-event objects from the scene, keeping detector geometry."""
+        self.event_group.children = []
         
     def setup_picking(self, hover_callback: Optional[Callable] = None):
         """

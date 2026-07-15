@@ -8,6 +8,8 @@ from pythreejs import *
 from typing import List, Union
 import random
 
+from .rotation_utils import direction_to_quaternion
+
 class ObjectFactory:
     """
     Factory class for creating 3D objects of physics things
@@ -119,8 +121,6 @@ class ObjectFactory:
         
     def _create_jet(self, pt, eta, phi, name, style):
         """Create a single jet object."""
-        theta = 2 * math.atan(pow(math.e, -eta))
-        
         # Direction vector
         dir_vec = np.array([
             math.cos(phi),
@@ -152,8 +152,10 @@ class ObjectFactory:
         
         # Position and orient the jet
         length = style['length'] * 0.5
-        jet.rotateZ(phi - math.pi/2)
-        jet.rotateX(math.pi/2 - theta)
+        # Reuse the same absolute-quaternion helper as the persistent
+        # detector geometry (rotation_utils.direction_to_quaternion) rather
+        # than duplicating the rotation math here.
+        jet.quaternion = direction_to_quaternion((0, 1, 0), dir_vec)
         jet.position = (dir_vec * length).tolist()
         
         # Add metadata
@@ -289,7 +291,10 @@ class ObjectFactory:
         )
         
         cone = Mesh(cone_geometry, MeshBasicMaterial(color=style['color']))
-        cone.rotateZ(float(phi) - math.pi/2)
+        # Reuse the same absolute-quaternion helper as the persistent
+        # detector geometry (rotation_utils.direction_to_quaternion) rather
+        # than duplicating the rotation math here.
+        cone.quaternion = direction_to_quaternion((0, 1, 0), dir_vec)
         cone.position = (dir_vec * (length + d - 0.2)).tolist()
         
         # Add metadata to cone (for picking)
