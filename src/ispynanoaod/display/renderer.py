@@ -40,15 +40,25 @@ class EventRenderer:
     def _setup_lights(self):
         """Setup scene lighting."""
         light_pos = 15.0
+
+        # DirectionalLight.target defaults to pythreejs' Uninitialized
+        # sentinel, which leaves three.js to create its own implicit target
+        # object with no Python-side widget backing it. Colab's custom
+        # widget manager round-trips that implicit target's model id back
+        # to Python, which then fails to resolve it to a widget and raises
+        # a TraitError. Give each light an explicit, Python-backed target
+        # (stationary at the origin, matching the implicit default) instead.
         self.lights = [
             DirectionalLight(
                 color='white',
                 position=[-light_pos, light_pos, light_pos],
+                target=Object3D(position=[0, 0, 0]),
                 intensity=1
             ),
             DirectionalLight(
                 color='white',
                 position=[light_pos, -light_pos, -light_pos],
+                target=Object3D(position=[0, 0, 0]),
                 intensity=1
             )
         ]
