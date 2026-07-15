@@ -37,30 +37,36 @@ class EventRenderer:
         self.picker = None
         self.last_hovered_object = None
         
+    def _make_directional_light(self, position):
+        """
+        Create a DirectionalLight with explicit, Python-backed `target` and
+        `shadow` widgets.
+
+        Both traits default to pythreejs' Uninitialized sentinel, which
+        leaves three.js to create its own implicit objects (a target
+        Object3D, and a shadow's own default OrthographicCamera) with no
+        Python-side widget backing them. Colab's custom widget manager
+        round-trips those implicit objects' model ids back to Python, which
+        then fails to resolve them to widgets and raises a TraitError.
+        Explicitly constructing them (with values matching three.js'
+        defaults) avoids that, without changing the light's behavior.
+        """
+        return DirectionalLight(
+            color='white',
+            position=position,
+            intensity=1,
+            target=Object3D(position=[0, 0, 0]),
+            shadow=DirectionalLightShadow(
+                camera=OrthographicCamera(-5, 5, 5, -5, 0.5, 500)
+            )
+        )
+
     def _setup_lights(self):
         """Setup scene lighting."""
         light_pos = 15.0
-
-        # DirectionalLight.target defaults to pythreejs' Uninitialized
-        # sentinel, which leaves three.js to create its own implicit target
-        # object with no Python-side widget backing it. Colab's custom
-        # widget manager round-trips that implicit target's model id back
-        # to Python, which then fails to resolve it to a widget and raises
-        # a TraitError. Give each light an explicit, Python-backed target
-        # (stationary at the origin, matching the implicit default) instead.
         self.lights = [
-            DirectionalLight(
-                color='white',
-                position=[-light_pos, light_pos, light_pos],
-                target=Object3D(position=[0, 0, 0]),
-                intensity=1
-            ),
-            DirectionalLight(
-                color='white',
-                position=[light_pos, -light_pos, -light_pos],
-                target=Object3D(position=[0, 0, 0]),
-                intensity=1
-            )
+            self._make_directional_light([-light_pos, light_pos, light_pos]),
+            self._make_directional_light([light_pos, -light_pos, -light_pos]),
         ]
         
     def _setup_camera(self):
