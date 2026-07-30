@@ -179,7 +179,16 @@ class EventDisplay:
                 event['IsoTrack_phi'], event['IsoTrack_charge']
             )
             objects.extend(tracks)
-            
+
+        # PFCands
+        if event['nPFCands'] > 0:
+            pfcands = self.object_factory.create_pfcands(
+                event['PFCands_pt'], event['PFCands_eta'],
+                event['PFCands_phi'], event['PFCands_charge'],
+                event['PFCands_pdgId']
+            )
+            objects.extend(pfcands)
+
         # MET
         met = self.object_factory.create_met(
             event['MET_pt'], event['MET_phi']

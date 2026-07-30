@@ -43,6 +43,10 @@ class ObjectFactory:
                 'color': '#ffff00',
                 'linewidth': 2
             },
+            'pfcand': {
+                'color': '#ffaa00',
+                'linewidth': 2
+            },
             'met': {
                 'color': '#ff00ff',
                 'scale': 0.1,
@@ -202,7 +206,25 @@ class ObjectFactory:
             tracks.append(track)
 
         return tracks
-        
+
+    def create_pfcands(self, pt_array, eta_array, phi_array, charge_array, pdgid_array) -> List:
+        """Create 3D PFCand objects, restricted to electrons, muons, and charged pions."""
+        pfcands = []
+        style = self.styles['pfcand']
+
+        for pt, eta, phi, charge, pdgid in zip(pt_array, eta_array, phi_array, charge_array, pdgid_array):
+            if abs(int(pdgid)) not in (11, 13, 211):
+                continue
+            if pt <= 1:
+                continue
+            pfcand = self._create_lepton(
+                float(pt), float(eta), float(phi), int(charge), 'PFCand', style
+            )
+            pfcand.props['pdgId'] = int(pdgid)
+            pfcands.append(pfcand)
+
+        return pfcands
+    
     def _create_lepton(self, pt, eta, phi, charge, name, style):
         """Create a lepton (muon or electron) track"""
         # Assume for now that the track starts from (0,0,0)
@@ -389,7 +411,7 @@ class ObjectFactory:
         
         px = np.cos(phi)                                                                                                                              
         py = np.sin(phi)                                                                                                                              
-        pz = (np.pow(np.e, eta) - np.pow(np.e, -eta))/2;
+        pz = (np.power(np.e, eta) - np.power(np.e, -eta))/2;
 
         eta_max = 1.48 # if greater then propagate to EE
         if np.abs(eta) > 1.48:

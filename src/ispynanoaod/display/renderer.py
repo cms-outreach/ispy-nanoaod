@@ -214,7 +214,8 @@ class EventRenderer:
             'SV': '#ff6600',
             'FatJet': '#ff6600',
             'IsoTrack': '#ffff00',
-            'Photon': '#ffff00'
+            'Photon': '#ffff00',
+            'PFCand': '#ffaa00',
         }
         
         if obj.name in color_map and hasattr(obj.material, 'color'):

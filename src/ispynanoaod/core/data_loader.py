@@ -22,6 +22,7 @@ class DataLoader:
         'PV_x', 'PV_y', 'PV_z',
         'nFatJet', 'FatJet_pt', 'FatJet_eta', 'FatJet_phi',
         'nIsoTrack', 'IsoTrack_pt', 'IsoTrack_eta', 'IsoTrack_phi', 'IsoTrack_charge',
+        'nPFCands', 'PFCands_pt', 'PFCands_eta', 'PFCands_phi', 'PFCands_charge', 'PFCands_pdgId' 
     ]
     
     def __init__(self):
