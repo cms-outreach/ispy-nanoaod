@@ -43,6 +43,9 @@ class EventDisplay:
         self.events_data = None
         self.current_event_index = 0
         self.max_events = 0
+        # Which optional collections (see DataLoader.COLLECTIONS) are present
+        # in the currently loaded file - resolved once on load, not per event.
+        self.available_collections = set()
 
         # Detector geometry is static, so it's built once and reused across
         # every event instead of being recreated on each render. The build
@@ -80,9 +83,10 @@ class EventDisplay:
             Specific branches to load
         """
         self.events_data = self.data_loader.load_root_file(filename, branches)
+        self.available_collections = self.data_loader.available_collections(self.events_data)
         self.max_events = len(self.events_data) - 1
         self.current_event_index = 0
-        
+
     def load_data(self, events_data):
         """
         Load events from pre-processed data.
@@ -93,6 +97,7 @@ class EventDisplay:
             Event data array
         """
         self.events_data = events_data
+        self.available_collections = self.data_loader.available_collections(self.events_data)
         self.max_events = len(events_data) - 1
         self.current_event_index = 0
         
@@ -143,29 +148,29 @@ class EventDisplay:
         objects = []
         
         # Jets
-        if event['nJet'] > 0:
+        if 'jet' in self.available_collections and event['nJet'] > 0:
             jets = self.object_factory.create_jets(
                 event['Jet_pt'], event['Jet_eta'], event['Jet_phi']
             )
             objects.extend(jets)
 
         # FatJets (ak8)
-        if event['nFatJet'] > 0:
+        if 'fatjet' in self.available_collections and event['nFatJet'] > 0:
             fjets = self.object_factory.create_fjets(
                 event['FatJet_pt'], event['FatJet_eta'], event['FatJet_phi']
             )
-            objects.extend(jets)
-        
+            objects.extend(fjets)
+
         # Muons
-        if event['nMuon'] > 0:
+        if 'muon' in self.available_collections and event['nMuon'] > 0:
             muons = self.object_factory.create_muons(
                 event['Muon_pt'], event['Muon_eta'],
                 event['Muon_phi'], event['Muon_charge']
             )
             objects.extend(muons)
-            
+
         # Electrons
-        if event['nElectron'] > 0:
+        if 'electron' in self.available_collections and event['nElectron'] > 0:
             electrons = self.object_factory.create_electrons(
                 event['Electron_pt'], event['Electron_eta'],
                 event['Electron_phi'], event['Electron_charge']
@@ -173,15 +178,15 @@ class EventDisplay:
             objects.extend(electrons)
 
         # IsoTracks
-        if event['nIsoTrack'] > 0:            
+        if 'isotrack' in self.available_collections and event['nIsoTrack'] > 0:
             tracks = self.object_factory.create_tracks(
                 event['IsoTrack_pt'], event['IsoTrack_eta'],
                 event['IsoTrack_phi'], event['IsoTrack_charge']
             )
             objects.extend(tracks)
 
-        # PFCands
-        if event['nPFCands'] > 0:
+        # PFCands (PFNano only)
+        if 'pfcand' in self.available_collections and event['nPFCands'] > 0:
             pfcands = self.object_factory.create_pfcands(
                 event['PFCands_pt'], event['PFCands_eta'],
                 event['PFCands_phi'], event['PFCands_charge'],
@@ -194,21 +199,21 @@ class EventDisplay:
             event['MET_pt'], event['MET_phi']
         )
         objects.append(met)
-        
+
         # Vertices
-        if event['nSV'] > 0:
+        if 'sv' in self.available_collections and event['nSV'] > 0:
             svs = self.object_factory.create_secondary_vertices(
                 event['SV_x'], event['SV_y'], event['SV_z']
             )
             objects.extend(svs)
-            
+
         pv = self.object_factory.create_primary_vertex(
             event['PV_x'], event['PV_y'], event['PV_z']
         )
         objects.append(pv)
-        
-        # Photons            
-        if event['nPhoton'] > 0:    
+
+        # Photons
+        if 'photon' in self.available_collections and event['nPhoton'] > 0:
             photons = self.object_factory.create_photons(
                 event['Photon_pt'], event['Photon_eta'],
                 event['Photon_phi']

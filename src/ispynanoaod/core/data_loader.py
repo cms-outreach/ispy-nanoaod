@@ -11,20 +11,36 @@ class DataLoader:
     Handles loading and preprocessing of objects.
     """
     
-    DEFAULT_BRANCHES = [
+    # Branches always expected, regardless of nanoAOD flavor.
+    EVENT_BRANCHES = [
         'run', 'event', 'luminosityBlock',
-        'nJet', 'Jet_pt', 'Jet_eta', 'Jet_phi',
         'MET_pt', 'MET_phi',
-        'nPhoton', 'Photon_pt', 'Photon_eta', 'Photon_phi',
-        'nMuon', 'Muon_pt', 'Muon_eta', 'Muon_phi', 'Muon_charge',
-        'nElectron', 'Electron_pt', 'Electron_eta', 'Electron_phi', 'Electron_charge',
-        'nSV', 'SV_x', 'SV_y', 'SV_z',
         'PV_x', 'PV_y', 'PV_z',
-        'nFatJet', 'FatJet_pt', 'FatJet_eta', 'FatJet_phi',
-        'nIsoTrack', 'IsoTrack_pt', 'IsoTrack_eta', 'IsoTrack_phi', 'IsoTrack_charge',
-        'nPFCands', 'PFCands_pt', 'PFCands_eta', 'PFCands_phi', 'PFCands_charge', 'PFCands_pdgId' 
     ]
-    
+
+    # Per-object collections that may or may not be present depending on the
+    # nanoAOD flavor/version (e.g. plain NanoAOD has no PFCands; some private
+    # productions omit FatJet, IsoTrack, or SV). Each entry is resolved
+    # against the branches actually found in a file rather than assumed
+    # present, so a new collection only needs an entry here plus a factory
+    # method - see EventDisplay._render_event().
+    COLLECTIONS = {
+        'jet': {'count': 'nJet', 'branches': ['Jet_pt', 'Jet_eta', 'Jet_phi']},
+        'photon': {'count': 'nPhoton', 'branches': ['Photon_pt', 'Photon_eta', 'Photon_phi']},
+        'muon': {'count': 'nMuon', 'branches': ['Muon_pt', 'Muon_eta', 'Muon_phi', 'Muon_charge']},
+        'electron': {'count': 'nElectron', 'branches': ['Electron_pt', 'Electron_eta', 'Electron_phi', 'Electron_charge']},
+        'sv': {'count': 'nSV', 'branches': ['SV_x', 'SV_y', 'SV_z']},
+        'fatjet': {'count': 'nFatJet', 'branches': ['FatJet_pt', 'FatJet_eta', 'FatJet_phi']},
+        'isotrack': {'count': 'nIsoTrack', 'branches': ['IsoTrack_pt', 'IsoTrack_eta', 'IsoTrack_phi', 'IsoTrack_charge']},
+        'pfcand': {'count': 'nPFCands', 'branches': ['PFCands_pt', 'PFCands_eta', 'PFCands_phi', 'PFCands_charge', 'PFCands_pdgId']},
+    }
+
+    DEFAULT_BRANCHES = EVENT_BRANCHES + [
+        branch
+        for spec in COLLECTIONS.values()
+        for branch in [spec['count']] + spec['branches']
+    ]
+
     def __init__(self):
         """Initialize the data loader."""
         pass
@@ -81,3 +97,24 @@ class DataLoader:
                 
         except Exception as e:
             raise RuntimeError(f"Error loading ROOT file: {str(e)}")
+
+    def available_collections(self, events: ak.Array) -> set:
+        """
+        Determine which optional collections (see COLLECTIONS) have all of
+        their branches present in already-loaded event data.
+
+        Parameters:
+        -----------
+        events : awkward.Array
+            Event data as returned by load_root_file()
+
+        Returns:
+        --------
+        set
+            Names of available collections, e.g. {'jet', 'muon', 'pfcand'}
+        """
+        fields = set(events.fields)
+        return {
+            name for name, spec in self.COLLECTIONS.items()
+            if spec['count'] in fields and all(b in fields for b in spec['branches'])
+        }
