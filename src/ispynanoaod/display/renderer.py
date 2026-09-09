@@ -88,6 +88,12 @@ class EventRenderer:
         self.event_group = Object3D()
         self.scene.add(self.detector_group)
         self.scene.add(self.event_group)
+
+        # Per-event objects are further grouped by type (obj.name, e.g.
+        # 'Jet', 'Muon', 'PFCand') under event_group, so a whole type's
+        # visibility can be toggled by hiding its group. Rebuilt every
+        # event alongside event_group - see clear_event_objects().
+        self.type_groups = {}
         
     def _setup_renderer(self):
         """Setup the threejs renderer with controls."""
@@ -103,12 +109,30 @@ class EventRenderer:
         """
         Add per-event 3D objects to the scene (cleared on every event change).
 
+        Objects are grouped by type (obj.name) under event_group so that
+        set_type_visibility() can hide/show a whole type at once.
+
         Parameters:
         -----------
         objects : list or single object
             3D objects to add to the scene
         """
-        self._add_to_group(self.event_group, objects)
+        if not isinstance(objects, list):
+            objects = [objects]
+
+        for obj in objects:
+            if isinstance(obj, list):
+                # Handle nested lists
+                self.add_objects(obj)
+                continue
+
+            type_name = getattr(obj, 'name', None) or 'Other'
+            group = self.type_groups.get(type_name)
+            if group is None:
+                group = Object3D()
+                self.type_groups[type_name] = group
+                self.event_group.add(group)
+            group.add(obj)
 
     def add_detector_objects(self, objects: Union[List, object]):
         """
@@ -137,7 +161,23 @@ class EventRenderer:
     def clear_event_objects(self):
         """Remove all per-event objects from the scene, keeping detector geometry."""
         self.event_group.children = []
-        
+        self.type_groups = {}
+
+    def set_type_visibility(self, type_name: str, visible: bool):
+        """
+        Show or hide all current per-event objects of a given type.
+
+        Parameters:
+        -----------
+        type_name : str
+            Object type name (obj.name), e.g. 'Jet', 'Muon', 'PFCand'
+        visible : bool
+            Whether objects of this type should be visible
+        """
+        group = self.type_groups.get(type_name)
+        if group is not None:
+            group.visible = visible
+
     def setup_picking(self, hover_callback: Optional[Callable] = None):
         """
         Setup object picking/hovering functionality.
