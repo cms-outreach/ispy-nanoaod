@@ -2,18 +2,22 @@
 User interface controls for the event display.
 """
 import ipywidgets as widgets
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 class EventControls:
     """
     Manages UI controls for event navigation and display options.
     """
-    
+
     def __init__(self):
         """Initialize the controls."""
         self.prev_button = None
         self.next_button = None
-        
+        # Persistent container for visibility checkboxes - its children are
+        # replaced (not the container itself) whenever the set of object
+        # types changes, so an already-displayed widget updates in place.
+        self.visibility_container = widgets.HBox()
+
     def setup_navigation(self, 
                         prev_callback: Callable, 
                         next_callback: Callable,
@@ -67,3 +71,46 @@ class EventControls:
         button_box = widgets.HBox([self.prev_button, self.next_button])
 
         return button_box
+
+    def setup_visibility_toggles(self,
+                                type_names: List[str],
+                                toggle_callback: Callable[[str, bool], None]):
+        """
+        (Re)build one visibility checkbox per object type. Replaces any
+        previously built checkboxes, e.g. after loading a file with a
+        different set of available collections.
+
+        Parameters:
+        -----------
+        type_names : list of str
+            Object type names to show a toggle for, e.g. ['MET', 'PV', 'Jet', 'Muon']
+        toggle_callback : callable
+            Called as toggle_callback(type_name, visible) when a checkbox changes
+        """
+        checkboxes = []
+        for type_name in type_names:
+            checkbox = widgets.Checkbox(
+                value=True,
+                description=type_name,
+                indent=False,
+                layout=widgets.Layout(width='110px')
+            )
+            checkbox.observe(
+                lambda change, t=type_name: toggle_callback(t, change['new']),
+                names='value'
+            )
+            checkboxes.append(checkbox)
+
+        self.visibility_container.children = checkboxes
+
+    def create_visibility_widget(self) -> widgets.Widget:
+        """
+        Create the visibility toggle widget.
+
+        Returns:
+        --------
+        widgets.Widget
+            Container of visibility checkboxes, updated in place by
+            setup_visibility_toggles()
+        """
+        return self.visibility_container

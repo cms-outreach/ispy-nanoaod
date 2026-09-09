@@ -325,7 +325,8 @@ class ObjectFactory:
         
         # Group line and cone
         met = Object3D(children=(line, cone))
-        
+        met.name = 'MET'
+
         return met
         
     def create_primary_vertex(self, x, y, z):

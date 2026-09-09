@@ -11,34 +11,41 @@ class DataLoader:
     Handles loading and preprocessing of objects.
     """
     
-    # Branches always expected, regardless of nanoAOD flavor.
-    EVENT_BRANCHES = [
-        'run', 'event', 'luminosityBlock',
-        'MET_pt', 'MET_phi',
-        'PV_x', 'PV_y', 'PV_z',
-    ]
+    # Branches always expected, regardless of nanoAOD flavor - just the
+    # basic per-event identifiers written by every nanoAOD-derived tree.
+    EVENT_BRANCHES = ['run', 'event', 'luminosityBlock']
 
-    # Per-object collections that may or may not be present depending on the
-    # nanoAOD flavor/version (e.g. plain NanoAOD has no PFCands; some private
-    # productions omit FatJet, IsoTrack, or SV). Each entry is resolved
-    # against the branches actually found in a file rather than assumed
-    # present, so a new collection only needs an entry here plus a factory
-    # method - see EventDisplay._render_event().
+    # Physics objects that may or may not be present depending on the
+    # nanoAOD flavor/version (e.g. plain NanoAOD has no PFCands; some
+    # skims/productions omit MET, PV, FatJet, IsoTrack, or SV). Each entry
+    # is resolved against the branches actually found in a file rather than
+    # assumed present, so a new object only needs an entry here plus a
+    # factory method - see EventDisplay._render_event().
+    #
+    # 'count' is the array-length branch (e.g. 'nJet') for collections that
+    # can hold multiple objects per event, or None for singleton objects
+    # (MET, PV) that have no count branch.
+    #
+    # 'object_name' matches the .name assigned to the corresponding 3D
+    # object(s) in ObjectFactory - it's how the renderer groups objects for
+    # per-type visibility toggling (see EventRenderer.add_objects()).
     COLLECTIONS = {
-        'jet': {'count': 'nJet', 'branches': ['Jet_pt', 'Jet_eta', 'Jet_phi']},
-        'photon': {'count': 'nPhoton', 'branches': ['Photon_pt', 'Photon_eta', 'Photon_phi']},
-        'muon': {'count': 'nMuon', 'branches': ['Muon_pt', 'Muon_eta', 'Muon_phi', 'Muon_charge']},
-        'electron': {'count': 'nElectron', 'branches': ['Electron_pt', 'Electron_eta', 'Electron_phi', 'Electron_charge']},
-        'sv': {'count': 'nSV', 'branches': ['SV_x', 'SV_y', 'SV_z']},
-        'fatjet': {'count': 'nFatJet', 'branches': ['FatJet_pt', 'FatJet_eta', 'FatJet_phi']},
-        'isotrack': {'count': 'nIsoTrack', 'branches': ['IsoTrack_pt', 'IsoTrack_eta', 'IsoTrack_phi', 'IsoTrack_charge']},
-        'pfcand': {'count': 'nPFCands', 'branches': ['PFCands_pt', 'PFCands_eta', 'PFCands_phi', 'PFCands_charge', 'PFCands_pdgId']},
+        'jet': {'count': 'nJet', 'branches': ['Jet_pt', 'Jet_eta', 'Jet_phi'], 'object_name': 'Jet'},
+        'photon': {'count': 'nPhoton', 'branches': ['Photon_pt', 'Photon_eta', 'Photon_phi'], 'object_name': 'Photon'},
+        'muon': {'count': 'nMuon', 'branches': ['Muon_pt', 'Muon_eta', 'Muon_phi', 'Muon_charge'], 'object_name': 'Muon'},
+        'electron': {'count': 'nElectron', 'branches': ['Electron_pt', 'Electron_eta', 'Electron_phi', 'Electron_charge'], 'object_name': 'Electron'},
+        'sv': {'count': 'nSV', 'branches': ['SV_x', 'SV_y', 'SV_z'], 'object_name': 'SV'},
+        'fatjet': {'count': 'nFatJet', 'branches': ['FatJet_pt', 'FatJet_eta', 'FatJet_phi'], 'object_name': 'FatJet'},
+        'isotrack': {'count': 'nIsoTrack', 'branches': ['IsoTrack_pt', 'IsoTrack_eta', 'IsoTrack_phi', 'IsoTrack_charge'], 'object_name': 'IsoTrack'},
+        'pfcand': {'count': 'nPFCands', 'branches': ['PFCands_pt', 'PFCands_eta', 'PFCands_phi', 'PFCands_charge', 'PFCands_pdgId'], 'object_name': 'PFCand'},
+        'met': {'count': None, 'branches': ['MET_pt', 'MET_phi'], 'object_name': 'MET'},
+        'pv': {'count': None, 'branches': ['PV_x', 'PV_y', 'PV_z'], 'object_name': 'PV'},
     }
 
     DEFAULT_BRANCHES = EVENT_BRANCHES + [
         branch
         for spec in COLLECTIONS.values()
-        for branch in [spec['count']] + spec['branches']
+        for branch in ([spec['count']] if spec['count'] else []) + spec['branches']
     ]
 
     def __init__(self):
@@ -116,5 +123,6 @@ class DataLoader:
         fields = set(events.fields)
         return {
             name for name, spec in self.COLLECTIONS.items()
-            if spec['count'] in fields and all(b in fields for b in spec['branches'])
+            if (spec['count'] is None or spec['count'] in fields)
+            and all(b in fields for b in spec['branches'])
         }

@@ -46,6 +46,11 @@ class EventDisplay:
         # Which optional collections (see DataLoader.COLLECTIONS) are present
         # in the currently loaded file - resolved once on load, not per event.
         self.available_collections = set()
+        # Desired visibility per object type name (e.g. 'Jet', 'Muon'),
+        # driven by the checkboxes in EventControls and reapplied after
+        # every _render_event() since per-event object groups are rebuilt
+        # from scratch each time.
+        self.visibility_state = {}
 
         # Detector geometry is static, so it's built once and reused across
         # every event instead of being recreated on each render. The build
@@ -84,6 +89,7 @@ class EventDisplay:
         """
         self.events_data = self.data_loader.load_root_file(filename, branches)
         self.available_collections = self.data_loader.available_collections(self.events_data)
+        self._setup_visibility_controls()
         self.max_events = len(self.events_data) - 1
         self.current_event_index = 0
 
@@ -98,6 +104,7 @@ class EventDisplay:
         """
         self.events_data = events_data
         self.available_collections = self.data_loader.available_collections(self.events_data)
+        self._setup_visibility_controls()
         self.max_events = len(events_data) - 1
         self.current_event_index = 0
         
@@ -133,6 +140,26 @@ class EventDisplay:
         )
         self.renderer.add_detector_objects(detector_objects)
         self._detector_built = True
+
+    def _setup_visibility_controls(self):
+        """
+        (Re)build the visibility toggle checkboxes for the object types
+        present in the currently loaded file. Called on every load, since
+        available collections - including MET and PV - can differ between
+        files/skims. Existing toggle state for types no longer present is
+        dropped; newly available types default to visible.
+        """
+        type_names = sorted(
+            self.data_loader.COLLECTIONS[name]['object_name']
+            for name in self.available_collections
+        )
+        self.visibility_state = {t: True for t in type_names}
+        self.controls.setup_visibility_toggles(type_names, self._on_visibility_toggle)
+
+    def _on_visibility_toggle(self, type_name, visible):
+        """Handle a visibility checkbox change for one object type."""
+        self.visibility_state[type_name] = visible
+        self.renderer.set_type_visibility(type_name, visible)
 
     def _render_event(self, event):
         """Render a single event to the 3D scene."""
@@ -195,10 +222,11 @@ class EventDisplay:
             objects.extend(pfcands)
 
         # MET
-        met = self.object_factory.create_met(
-            event['MET_pt'], event['MET_phi']
-        )
-        objects.append(met)
+        if 'met' in self.available_collections:
+            met = self.object_factory.create_met(
+                event['MET_pt'], event['MET_phi']
+            )
+            objects.append(met)
 
         # Vertices
         if 'sv' in self.available_collections and event['nSV'] > 0:
@@ -207,10 +235,11 @@ class EventDisplay:
             )
             objects.extend(svs)
 
-        pv = self.object_factory.create_primary_vertex(
-            event['PV_x'], event['PV_y'], event['PV_z']
-        )
-        objects.append(pv)
+        if 'pv' in self.available_collections:
+            pv = self.object_factory.create_primary_vertex(
+                event['PV_x'], event['PV_y'], event['PV_z']
+            )
+            objects.append(pv)
 
         # Photons
         if 'photon' in self.available_collections and event['nPhoton'] > 0:
@@ -222,6 +251,11 @@ class EventDisplay:
         
         # Add all objects to scene
         self.renderer.add_objects(objects)
+
+        # Per-type object groups were just rebuilt from scratch, so
+        # reapply the current visibility toggle state to them.
+        for type_name, visible in self.visibility_state.items():
+            self.renderer.set_type_visibility(type_name, visible)
 
     def _update_event_info(self, event):
         """Update the event information display."""
@@ -257,13 +291,15 @@ class EventDisplay:
         """Display the complete interface in the notebook."""
         # Create the main layout
         control_box = self.controls.create_widget()
+        visibility_box = self.controls.create_visibility_widget()
         info_box = widgets.VBox([self.info_widget])
         pick_box = widgets.VBox([self.pick_info_widget])
         renderer_widget = self.renderer.get_widget()
-        
+
         # Display everything
-        display(control_box)
         display(info_box)
+        display(control_box)
+        display(visibility_box)
         display(pick_box)
         display(renderer_widget)
         
